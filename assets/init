@@ -1,0 +1,54 @@
+#!/bin/bash
+set -ex
+
+DELAY=${DELAY:-5}
+SOURCE_DIR=${SOURCE_DIR:-}
+TARGET_DIR=${TARGET_DIR:-}
+
+if [ -z "${SOURCE_DIR}" ] ; then
+    echo "ERROR: "
+    echo " Please specify source dir."
+    echo " You can do this by '-e SOURCE_DIR=/SOURCE/PATH/'."
+    exit 1
+fi
+
+if [ -z "${TARGET_DIR}" ] ; then
+    echo "ERROR: "
+    echo " Please specify target dir."
+    echo " You can do this by '-e TARGET_DIR=/TARGET/PATH/'."
+    exit 1
+fi
+
+add_end_slash() {
+    if [ -z "$(echo "$1" | egrep "/$")" ] ; then
+        echo "$1/"
+    else
+        echo "$1"
+    fi
+}
+
+SOURCE_DIR="$(add_end_slash "${SOURCE_DIR}")"
+TARGET_DIR="$(add_end_slash "${TARGET_DIR}")"
+
+sed 's#{{DELAY}}#'"${DELAY}"'#' -i /app/config/lsyncd.conf
+sed 's#{{SOURCE_DIR}}#'"${SOURCE_DIR}"'#' -i /app/config/lsyncd.conf
+sed 's#{{TARGET_DIR}}#'"${TARGET_DIR}"'#' -i /app/config/lsyncd.conf
+
+case "$1" in
+    start)
+        lsyncd -log all /app/config/lsyncd.conf
+        ;;
+    *)
+        prog=$(which $1)
+
+        # check if the program exists.
+        [[ -n "${prog}" ]]   || { echo "Can't find command $1" ; exit 1 ; }
+
+        # check fi the grogram can be excuted.
+        [[ ! -x "${prog}" ]] || { echo "Can't execute cmd $1"  ; exit 1 ; }
+
+        # run command with arguments.
+        shift 1
+        ${prog} $@
+        ;;
+esac

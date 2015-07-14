@@ -1,0 +1,6 @@
+app:
+  build: .
+  environment:
+    - DELAY=15
+    - SOURCE_DIR=/tmp/src
+    - TARGET_DIR=/tmp/dst/
