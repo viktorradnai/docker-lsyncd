@@ -4,3 +4,18 @@ app:
     - DELAY=15
     - SOURCE_DIR=/tmp/src
     - TARGET_DIR=/tmp/dst/
+  ports:
+   - 2222:2222
+  volumes:
+   - /data
+  environment:
+   - DELAY=1
+   - SOURCE_USER=www-data
+   - SOURCE_GROUP=www-data
+   - SOURCE_PERM=755
+   - SOURCE_DIR=/data
+   - SOURCE_PORT=2222
+   - TARGET_HOST=$DOCKER_PEER
+   - TARGET_DIR=/data
+   - TARGET_PORT=2222
+`

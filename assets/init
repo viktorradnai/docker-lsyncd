@@ -3,7 +3,13 @@ set -ex
 
 DELAY=${DELAY:-5}
 SOURCE_DIR=${SOURCE_DIR:-}
+SOURCE_USER=${SOURCE_USER:-root}
+SOURCE_GROUP=${SOURCE_GROUP:-root}
+SOURCE_PERM=${SOURCE_PERM:-755}
 TARGET_DIR=${TARGET_DIR:-}
+TARGET_HOST=${TARGET_HOST:-}
+SOURCE_PORT=${SOURCE_PORT:-22}
+TARGET_PORT=${TARGET_PORT:-22}
 
 if [ -z "${SOURCE_DIR}" ] ; then
     echo "ERROR: "
@@ -30,13 +36,26 @@ add_end_slash() {
 SOURCE_DIR="$(add_end_slash "${SOURCE_DIR}")"
 TARGET_DIR="$(add_end_slash "${TARGET_DIR}")"
 
+chown -R ${SOURCE_USER}:${SOURCE_GROUP} ${SOURCE_DIR}
+chmod -R ${SOURCE_PERM} ${SOURCE_DIR}
+
 sed 's#{{DELAY}}#'"${DELAY}"'#' -i /app/config/lsyncd.conf
 sed 's#{{SOURCE_DIR}}#'"${SOURCE_DIR}"'#' -i /app/config/lsyncd.conf
 sed 's#{{TARGET_DIR}}#'"${TARGET_DIR}"'#' -i /app/config/lsyncd.conf
+sed 's#{{TARGET_HOST}}#'"${TARGET_HOST}"'#' -i /app/config/lsyncd.conf
+sed 's#{{SOURCE_PORT}}#'"${SOURCE_PORT}"'#' -i /etc/ssh/sshd_config
+
+cat - > /root/.ssh/config <<EOF
+Host $TARGET_HOST
+Port $TARGET_PORT
+StrictHostKeyChecking no
+EOF
+
+service ssh restart
 
 case "$1" in
     start)
-        lsyncd -log all /app/config/lsyncd.conf
+        lsyncd -log Exec /app/config/lsyncd.conf -insist
         ;;
     *)
         prog=$(which $1)
@@ -45,7 +64,7 @@ case "$1" in
         [[ -n "${prog}" ]]   || { echo "Can't find command $1" ; exit 1 ; }
 
         # check fi the grogram can be excuted.
-        [[ ! -x "${prog}" ]] || { echo "Can't execute cmd $1"  ; exit 1 ; }
+        [[ -x "${prog}" ]] || { echo "Can't execute cmd $1"  ; exit 1 ; }
 
         # run command with arguments.
         shift 1
