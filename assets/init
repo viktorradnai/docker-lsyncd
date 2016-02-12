@@ -36,25 +36,30 @@ add_end_slash() {
 SOURCE_DIR="$(add_end_slash "${SOURCE_DIR}")"
 TARGET_DIR="$(add_end_slash "${TARGET_DIR}")"
 
+# Set the owner and permissions for the source volume
 chown -R ${SOURCE_USER}:${SOURCE_GROUP} ${SOURCE_DIR}
 chmod -R ${SOURCE_PERM} ${SOURCE_DIR}
 
+# Replace the placeholders in config files with actual values
 sed 's#{{DELAY}}#'"${DELAY}"'#' -i /app/config/lsyncd.conf
 sed 's#{{SOURCE_DIR}}#'"${SOURCE_DIR}"'#' -i /app/config/lsyncd.conf
 sed 's#{{TARGET_DIR}}#'"${TARGET_DIR}"'#' -i /app/config/lsyncd.conf
 sed 's#{{TARGET_HOST}}#'"${TARGET_HOST}"'#' -i /app/config/lsyncd.conf
 sed 's#{{SOURCE_PORT}}#'"${SOURCE_PORT}"'#' -i /etc/ssh/sshd_config
 
+# Generate an ssh config file for connecting to the right port
 cat - > /root/.ssh/config <<EOF
 Host $TARGET_HOST
 Port $TARGET_PORT
 StrictHostKeyChecking no
 EOF
 
+# (Re)start sshd
 service ssh restart
 
 case "$1" in
     start)
+        # The -insist parameter is needed as the other side may not be up yet
         lsyncd -log Exec /app/config/lsyncd.conf -insist
         ;;
     *)
