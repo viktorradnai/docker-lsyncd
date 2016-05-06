@@ -1,4 +1,4 @@
-#Docker Lsyncd container
+# Docker Lsyncd container
 
 This container uses Lsyncd (with inotify and Rsync + SSH) to keep two directories in sync.
 
